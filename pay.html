@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pay ForgeDev — Pippin's AI Agency</title>
+<style>
+  :root {
+    --bg: #0a0a12;
+    --surface: #12121e;
+    --card: #1a1a2e;
+    --border: #2a2a3e;
+    --text: #e0e0e0;
+    --muted: #8899aa;
+    --accent: #00d2ff;
+    --green: #00ff88;
+    --purple: #aa88ff;
+    --orange: #ffaa00;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .header {
+    text-align: center;
+    padding: 40px 20px 20px;
+  }
+  .header h1 {
+    font-size: 1.8em;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .header p {
+    color: var(--muted);
+    font-size: 1em;
+  }
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* Invoice section */
+  .invoice-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .invoice-box h2 {
+    font-size: 1.1em;
+    color: var(--accent);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+  .invoice-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.95em;
+  }
+  .invoice-row:last-child { border-bottom: none; }
+  .invoice-row .label { color: var(--muted); }
+  .invoice-row .value { color: #fff; font-weight: 600; }
+  .invoice-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 16px 0 0;
+    margin-top: 8px;
+    border-top: 2px solid var(--accent);
+    font-size: 1.2em;
+  }
+  .invoice-total .value { color: var(--green); }
+  .amount-input {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.5em;
+    padding: 12px 16px;
+    width: 100%;
+    text-align: center;
+    outline: none;
+  }
+  .amount-input:focus { border-color: var(--accent); }
+  .note-input {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.9em;
+    padding: 10px 14px;
+    width: 100%;
+    margin-top: 12px;
+    outline: none;
+    resize: none;
+  }
+  .note-input:focus { border-color: var(--accent); }
+
+  /* Payment methods grid */
+  .methods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .method-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: var(--text);
+    display: block;
+  }
+  .method-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 210, 255, 0.1);
+  }
+  .method-icon {
+    font-size: 2em;
+    margin-bottom: 8px;
+  }
+  .method-card h3 {
+    font-size: 1em;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .method-card p {
+    font-size: 0.8em;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .method-badge {
+    display: inline-block;
+    font-size: 0.65em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-instant { background: rgba(0,255,136,0.15); color: var(--green); }
+  .badge-card { background: rgba(0,210,255,0.15); color: var(--accent); }
+  .badge-bank { background: rgba(170,136,255,0.15); color: var(--purple); }
+  .badge-free { background: rgba(255,170,0,0.15); color: var(--orange); }
+
+  /* Stripe card payment section */
+  .stripe-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 24px;
+    display: none;
+  }
+  .stripe-section.active { display: block; }
+  .stripe-section h2 {
+    font-size: 1em;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  #card-element {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .stripe-btn {
+    background: linear-gradient(135deg, #00d2ff, #00ff88);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 28px;
+    font-size: 1em;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 16px;
+    transition: opacity 0.2s;
+  }
+  .stripe-btn:hover { opacity: 0.9; }
+  .stripe-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .security-note {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.75em;
+    margin-top: 24px;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .back-link {
+    display: inline-block;
+    color: var(--accent);
+    text-decoration: none;
+    margin-top: 20px;
+    font-size: 0.9em;
+  }
+  .back-link:hover { text-decoration: underline; }
+
+  .or-divider {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85em;
+    margin: 20px 0;
+    position: relative;
+  }
+  .or-divider::before, .or-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: var(--border);
+  }
+  .or-divider::before { left: 0; }
+  .or-divider::after { right: 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>ForgeDev Payment</h1>
+  <p>Choose your preferred payment method</p>
+</div>
+
+<div class="container">
+  <!-- Amount Entry -->
+  <div class="invoice-box">
+    <h2>Payment Amount</h2>
+    <input type="number" class="amount-input" id="payAmount" placeholder="$0.00" min="1" step="0.01">
+    <textarea class="note-input" id="payNote" rows="2" placeholder="Project name or invoice reference (optional)"></textarea>
+  </div>
+
+  <!-- Payment Methods -->
+  <div class="invoice-box">
+    <h2>Select Payment Method</h2>
+    <div class="methods-grid">
+
+      <!-- Zelle -->
+      <a class="method-card" href="#" onclick="showZelleInfo(); return false;">
+        <div class="method-icon">🏦</div>
+        <h3>Zelle</h3>
+        <p>Send directly from your bank app. No fees.</p>
+        <span class="method-badge badge-free">Zero fees</span>
+      </a>
+
+      <!-- CashApp -->
+      <a class="method-card" href="https://cash.app/$DaveMoudy" target="_blank" id="cashappLink">
+        <div class="method-icon">💵</div>
+        <h3>CashApp</h3>
+        <p>Send to $DaveMoudy. Instant delivery.</p>
+        <span class="method-badge badge-instant">Instant</span>
+      </a>
+
+      <!-- Apple Pay / Card via Stripe -->
+      <a class="method-card" href="#" onclick="showStripePayment(); return false;" id="cardPayBtn">
+        <div class="method-icon">💳</div>
+        <h3>Card / Apple Pay</h3>
+        <p>Credit, debit, Apple Pay, Google Pay. Powered by Stripe.</p>
+        <span class="method-badge badge-card">Cards accepted</span>
+      </a>
+
+      <!-- ACH / e-Check -->
+      <a class="method-card" href="#" onclick="showACHInfo(); return false;">
+        <div class="method-icon">🔄</div>
+        <h3>ACH / e-Check</h3>
+        <p>Bank transfer. Lower fees for larger payments.</p>
+        <span class="method-badge badge-bank">Bank transfer</span>
+      </a>
+
+      <!-- PayPal -->
+      <a class="method-card" href="https://paypal.me/davemoudy" target="_blank" id="paypalLink">
+        <div class="method-icon">🅿️</div>
+        <h3>PayPal</h3>
+        <p>Send via PayPal balance, card, or bank.</p>
+        <span class="method-badge badge-instant">Widely accepted</span>
+      </a>
+
+      <!-- Wire / Other -->
+      <a class="method-card" href="mailto:davemoudy@gmail.com?subject=Payment%20Inquiry" target="_blank">
+        <div class="method-icon">📧</div>
+        <h3>Other / Invoice</h3>
+        <p>Need a formal invoice or different method? Email us.</p>
+        <span class="method-badge badge-free">Flexible</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Zelle Info (hidden by default) -->
+  <div class="stripe-section" id="zelleInfo">
+    <h2>Pay with Zelle</h2>
+    <p style="color:var(--text);line-height:1.6;margin-bottom:12px;">
+      Open your banking app, select <strong>Zelle</strong>, and send to:
+    </p>
+    <div style="background:var(--card);border-radius:8px;padding:16px;text-align:center;margin:12px 0;">
+      <div style="font-size:0.8em;color:var(--muted);margin-bottom:4px;">Send to email</div>
+      <div style="font-size:1.3em;color:#fff;font-weight:600;" id="zelleEmail">davemoudy@gmail.com</div>
+      <button onclick="copyToClipboard('davemoudy@gmail.com','zelleEmail')" style="margin-top:8px;background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:0.85em;">Copy</button>
+    </div>
+    <div style="background:var(--card);border-radius:8px;padding:16px;text-align:center;margin:12px 0;">
+      <div style="font-size:0.8em;color:var(--muted);margin-bottom:4px;">Or send to phone</div>
+      <div style="font-size:1.3em;color:#fff;font-weight:600;" id="zellePhone">(317) 999-7666</div>
+      <button onclick="copyToClipboard('3179997666','zellePhone')" style="margin-top:8px;background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:0.85em;">Copy</button>
+    </div>
+    <p style="color:var(--muted);font-size:0.85em;margin-top:12px;">
+      Include your project name in the memo. Zelle has zero transaction fees — you pay exactly what you owe.
+    </p>
+  </div>
+
+  <!-- ACH Info (hidden by default) -->
+  <div class="stripe-section" id="achInfo">
+    <h2>Pay via ACH / e-Check</h2>
+    <p style="color:var(--text);line-height:1.6;margin-bottom:12px;">
+      For ACH bank transfers, we'll generate a secure payment link via Stripe. ACH fees are only 0.8% (capped at $5).
+    </p>
+    <p style="color:var(--muted);font-size:0.85em;">
+      Alternatively, use <strong>Zelle</strong> for a zero-fee bank-to-bank transfer (faster and free).
+    </p>
+    <p style="color:var(--muted);font-size:0.85em;margin-top:8px;">
+      Email <a href="mailto:davemoudy@gmail.com" style="color:var(--accent);">davemoudy@gmail.com</a> with your invoice reference and we'll send an ACH payment link.
+    </p>
+  </div>
+
+  <!-- Stripe Card Payment (hidden by default) -->
+  <div class="stripe-section" id="stripeSection">
+    <h2>Card / Apple Pay / Google Pay</h2>
+    <p style="color:var(--muted);font-size:0.85em;margin-bottom:16px;">
+      Secure payment powered by Stripe. We accept all major credit and debit cards, plus Apple Pay and Google Pay.
+    </p>
+    <p style="color:var(--muted);font-size:0.85em;margin-bottom:8px;" id="stripeSetupMsg">
+      Card payments are being set up. For now, please use Zelle (zero fees) or CashApp for instant payment. Email <a href="mailto:davemoudy@gmail.com" style="color:var(--accent);">davemoudy@gmail.com</a> if you need a card payment link.
+    </p>
+  </div>
+
+  <div class="security-note">
+    All payments are processed securely through trusted third-party providers.<br>
+    ForgeDev does not store your payment information.<br><br>
+    Questions? Email <a href="mailto:davemoudy@gmail.com" style="color:var(--accent);">davemoudy@gmail.com</a> or message on <a href="https://wa.me/13179997666" style="color:var(--accent);">WhatsApp</a>
+  </div>
+
+  <div style="text-align:center;">
+    <a href="index.html" class="back-link">&larr; Back to ForgeDev</a>
+  </div>
+</div>
+
+<script>
+function showZelleInfo() {
+  document.getElementById('zelleInfo').classList.toggle('active');
+  document.getElementById('achInfo').classList.remove('active');
+  document.getElementById('stripeSection').classList.remove('active');
+}
+
+function showACHInfo() {
+  document.getElementById('achInfo').classList.toggle('active');
+  document.getElementById('zelleInfo').classList.remove('active');
+  document.getElementById('stripeSection').classList.remove('active');
+}
+
+function showStripePayment() {
+  document.getElementById('stripeSection').classList.toggle('active');
+  document.getElementById('zelleInfo').classList.remove('active');
+  document.getElementById('achInfo').classList.remove('active');
+}
+
+function copyToClipboard(text, elId) {
+  navigator.clipboard.writeText(text).then(() => {
+    const el = document.getElementById(elId);
+    const orig = el.textContent;
+    el.textContent = 'Copied!';
+    el.style.color = '#00ff88';
+    setTimeout(() => { el.textContent = orig; el.style.color = '#fff'; }, 1500);
+  });
+}
+
+// Update CashApp link with amount
+document.getElementById('payAmount').addEventListener('input', function() {
+  const amt = this.value;
+  if (amt) {
+    document.getElementById('cashappLink').href = `https://cash.app/$DaveMoudy/${amt}`;
+  } else {
+    document.getElementById('cashappLink').href = 'https://cash.app/$DaveMoudy';
+  }
+});
+</script>
+</body>
+</html>
